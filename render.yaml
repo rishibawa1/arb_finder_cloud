@@ -1,0 +1,6 @@
+services:
+  - type: worker
+    name: arb-finder
+    env: docker
+    plan: starter
+    autoDeploy: true

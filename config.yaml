@@ -1,0 +1,22 @@
+use_mock_data: true
+bankroll: 1000
+min_roi: 0.01
+max_stake_per_side: 5.0
+scan_interval_seconds: 60
+books:
+- DraftKings
+- BetMGM
+- FanDuel
+- Chalkboard
+odds_api:
+  api_key: 8bfe6fd8ef358d6ae89a4e87edbc210d
+  regions: us
+  markets: h2h
+  odds_format: american
+  bookmakers:
+  - DraftKings
+  - BetMGM
+  - FanDuel
+telegram:
+  bot_token: 8491725530:AAGPdTNmG_j4oYVy8-9LSzMoujITQCg9P6A
+  chat_id: '7424466433'
