@@ -1,9 +1,11 @@
-import os, time, csv
+import os, time, csv, json
 from typing import Dict, List, Any, Tuple
 import yaml
 from arb_math import american_to_decimal, is_two_way_arb, compute_equal_profit_stakes
 from odds_providers import fetch_the_odds_api
 from telegram_helper import send_message
+
+CACHE_PATH = "sent_cache.json"
 
 def load_config(path: str = "config.yaml") -> dict:
     with open(path, "r") as f:
@@ -66,7 +68,28 @@ def format_alert(event: str, side1: Dict[str, Any], side2: Dict[str, Any], s1: f
     lines.append(f"Edge: {roi*100:.2f}%")
     return "\n".join(lines)
 
-def run_once(cfg: dict) -> List[str]:
+def arb_signature(event: str, a: Dict[str, Any], b: Dict[str, Any], roi: float) -> str:
+    sides = sorted([
+        (a["book"], a["team"], a["american_odds"]),
+        (b["book"], b["team"], b["american_odds"]),
+    ])
+    roi_key = round(roi, 4)
+    return f"{event}|{sides[0]}|{sides[1]}|roi={roi_key}"
+
+def load_cache() -> Dict[str, float]:
+    if os.path.exists(CACHE_PATH):
+        try:
+            with open(CACHE_PATH, "r") as f:
+                return json.load(f)
+        except Exception:
+            return {}
+    return {}
+
+def save_cache(c: Dict[str, float]) -> None:
+    with open(CACHE_PATH, "w") as f:
+        json.dump(c, f)
+
+def run_once(cfg: dict) -> List[Tuple[str, str]]:
     bankroll = float(cfg.get("bankroll", 1000))
     min_roi = float(cfg.get("min_roi", 0.01))
     cap = float(cfg.get("max_stake_per_side", 5.0))
@@ -85,7 +108,7 @@ def run_once(cfg: dict) -> List[str]:
         )
 
     events = group_by_event(records)
-    alerts: List[str] = []
+    alerts: List[Tuple[str, str]] = []
     for event_key, rows in events.items():
         picks = best_price_per_team(rows, allowed_books)
         if len(picks) != 2:
@@ -98,37 +121,55 @@ def run_once(cfg: dict) -> List[str]:
         roi = calc_roi(d1, d2)
         if roi < min_roi:
             continue
-
         s1, s2, prof = compute_equal_profit_stakes(bankroll, d1, d2)
         s1, s2, prof = scale_to_cap(s1, s2, prof, cap)
-        alert = format_alert(event_key.split("|", 1)[1], a, b, s1, s2, prof, roi)
-        alerts.append(alert)
+        event_name = event_key.split("|", 1)[1]
+        alert = format_alert(event_name, a, b, s1, s2, prof, roi)
+        sig = arb_signature(event_name, a, b, roi)
+        alerts.append((alert, sig))
     return alerts
 
 def main():
     cfg = load_config("config.yaml")
     bot_token = cfg["telegram"]["bot_token"]
     chat_id = cfg["telegram"]["chat_id"]
+    dedupe_minutes = int(cfg.get("dedupe_minutes", 120))
+    interval = int(cfg.get("scan_interval_seconds", 60))
+
+    cache = load_cache()
 
     if cfg.get("use_mock_data", True):
         alerts = run_once(cfg)
-        if alerts:
-            for msg in alerts:
-                print(msg)
-                send_message(bot_token, chat_id, msg)
-        else:
-            print("No arbitrage found in mock data.")
-            send_message(bot_token, chat_id, "No arbitrage found in mock data.")
+        now = time.time()
+        ttl = dedupe_minutes * 60
+        cache = {k:v for k,v in cache.items() if now - v < ttl}
+        sent_any = False
+        for msg, sig in alerts:
+            if sig in cache:
+                continue
+            print(msg)
+            send_message(bot_token, chat_id, msg)
+            cache[sig] = now
+            sent_any = True
+        if not sent_any:
+            print("No new arbitrage found in mock data.")
+        save_cache(cache)
         return
 
-    interval = int(cfg.get("scan_interval_seconds", 60))
     print(f"Starting live scan every {interval} seconds. Press CTRL+C to stop.")
     while True:
         try:
             alerts = run_once(cfg)
-            for msg in alerts:
+            now = time.time()
+            ttl = dedupe_minutes * 60
+            cache = {k:v for k,v in cache.items() if now - v < ttl}
+            for msg, sig in alerts:
+                if sig in cache:
+                    continue
                 print(msg)
                 send_message(bot_token, chat_id, msg)
+                cache[sig] = now
+            save_cache(cache)
         except Exception as e:
             print(f"Scan error: {e}")
         time.sleep(interval)
