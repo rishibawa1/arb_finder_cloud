@@ -1,24 +1,34 @@
 use_mock_data: false
-dedupe_minutes: 120
+dedupe_minutes: 7200
 bankroll: 1000
-min_roi: 0.01
+min_roi: 0.005
 max_stake_per_side: 5.0
-scan_interval_seconds: 7200
-min_profit_usd: 0.20
+scan_interval_seconds: 60
 books:
-- DraftKings
-- BetMGM
-- FanDuel
-- Chalkboard
+  - DraftKings
+  - BetMGM
+  - FanDuel
+  - ESPN BET
+  - BetRivers
+  - bet365
+  - Hard Rock Bet
+  - Fanatics Sportsbook
+  - Caesars
 odds_api:
   api_key: 2bfe0badf36df5535c0c53137c9fda11
   regions: us
   markets: h2h
   odds_format: american
   bookmakers:
-  - DraftKings
-  - BetMGM
-  - FanDuel
+    - draftkings
+    - betmgm
+    - fanduel
+    - espnbet
+    - betrivers
+    - bet365
+    - hardrockbet
+    - fanatics
+    - williamhill_us
 telegram:
   bot_token: 8491725530:AAGPdTNmG_j4oYVy8-9LSzMoujITQCg9P6A
   chat_id: '7424466433'
