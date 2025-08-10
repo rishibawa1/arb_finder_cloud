@@ -10,7 +10,7 @@ books:
 - FanDuel
 - Chalkboard
 odds_api:
-  api_key: 8bfe6fd8ef358d6ae89a4e87edbc210d
+  api_key: 2bfe0badf36df5535c0c53137c9fda11
   regions: us
   markets: h2h
   odds_format: american
