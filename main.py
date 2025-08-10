@@ -139,7 +139,6 @@ def main():
     cache = load_cache()
 
     if cfg.get("use_mock_data", True):
-        # One-shot mock run for sanity
         alerts = run_once(cfg)
         now = time.time()
         ttl = dedupe_minutes * 60
@@ -176,13 +175,11 @@ def main():
             if sent == 0:
                 print(f"scan tick {time.strftime('%H:%M:%S')} no new arbs")
         except Exception as e:
-            # gentle backoff on rate limit
             if "429" in str(e):
                 print("Rate limited. Sleeping 60s.")
                 time.sleep(60)
             else:
                 print(f"Scan error: {e}")
-        # sleep remaining time in the interval
         elapsed = time.time() - start
         sleep_for = max(0, interval - elapsed)
         time.sleep(sleep_for)
