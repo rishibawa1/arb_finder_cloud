@@ -1,9 +1,10 @@
 use_mock_data: false
 dedupe_minutes: 120
 bankroll: 1000
-min_roi: 0.005
+min_roi: 0.01
 max_stake_per_side: 5.0
 scan_interval_seconds: 20
+min_profit_usd: 0.20
 books:
 - DraftKings
 - BetMGM
