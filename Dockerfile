@@ -7,5 +7,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
+ENV PYTHONUNBUFFERED=1
 # Default config runs mock once. For live mode, ensure config.yaml has use_mock_data: false
-CMD ["python", "main.py"]
+CMD ["python3", "-u", "main.py"]
+
