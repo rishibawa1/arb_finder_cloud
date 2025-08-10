@@ -4,10 +4,6 @@ import yaml
 from arb_math import american_to_decimal, is_two_way_arb, compute_equal_profit_stakes
 from odds_providers import fetch_the_odds_api
 from telegram_helper import send_message
-from datetime import datetime
-
-
-print(f"Service started successfully 🚀 at {datetime.now()}")
 
 
 CACHE_PATH = "sent_cache.json"
@@ -190,4 +186,11 @@ def main():
         time.sleep(sleep_for)
 
 if __name__ == "__main__":
+    from datetime import datetime
+    print(f"Service started successfully 🚀 at {datetime.now()}")
     main()
+    
+
+
+
+
