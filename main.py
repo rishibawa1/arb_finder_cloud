@@ -139,40 +139,53 @@ def main():
     cache = load_cache()
 
     if cfg.get("use_mock_data", True):
+        # One-shot mock run for sanity
         alerts = run_once(cfg)
         now = time.time()
         ttl = dedupe_minutes * 60
         cache = {k:v for k,v in cache.items() if now - v < ttl}
-        sent_any = False
         for msg, sig in alerts:
             if sig in cache:
                 continue
             print(msg)
             send_message(bot_token, chat_id, msg)
             cache[sig] = now
-            sent_any = True
-        if not sent_any:
-            print("No new arbitrage found in mock data.")
         save_cache(cache)
         return
 
-    print(f"Starting live scan every {interval} seconds. Press CTRL+C to stop.")
+    print(f"Scanner live. Interval {interval}s. Dedupe {dedupe_minutes}m.")
     while True:
         try:
+            start = time.time()
             alerts = run_once(cfg)
+
             now = time.time()
             ttl = dedupe_minutes * 60
             cache = {k:v for k,v in cache.items() if now - v < ttl}
+
+            sent = 0
             for msg, sig in alerts:
                 if sig in cache:
                     continue
                 print(msg)
                 send_message(bot_token, chat_id, msg)
                 cache[sig] = now
+                sent += 1
+
             save_cache(cache)
+            if sent == 0:
+                print(f"scan tick {time.strftime('%H:%M:%S')} no new arbs")
         except Exception as e:
-            print(f"Scan error: {e}")
-        time.sleep(interval)
+            # gentle backoff on rate limit
+            if "429" in str(e):
+                print("Rate limited. Sleeping 60s.")
+                time.sleep(60)
+            else:
+                print(f"Scan error: {e}")
+        # sleep remaining time in the interval
+        elapsed = time.time() - start
+        sleep_for = max(0, interval - elapsed)
+        time.sleep(sleep_for)
 
 if __name__ == "__main__":
     main()
