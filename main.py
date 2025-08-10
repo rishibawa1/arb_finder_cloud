@@ -124,6 +124,13 @@ def run_once(cfg: dict) -> List[Tuple[str, str]]:
             continue
         s1, s2, prof = compute_equal_profit_stakes(bankroll, d1, d2)
         s1, s2, prof = scale_to_cap(s1, s2, prof, cap)
+
+        min_profit = float(cfg.get("min_profit_usd", 0.0))
+        if prof < min_profit:
+            continue
+
+
+
         event_name = event_key.split("|", 1)[1]
         alert = format_alert(event_name, a, b, s1, s2, prof, roi)
         sig = arb_signature(event_name, a, b, roi)
