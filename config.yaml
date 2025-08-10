@@ -31,4 +31,6 @@ odds_api:
     - williamhill_us
 telegram:
   bot_token: 8491725530:AAGPdTNmG_j4oYVy8-9LSzMoujITQCg9P6A
-  chat_id: '7424466433'
+  chat_id: 
+    - '7424466433'
+    - '7242815401'
